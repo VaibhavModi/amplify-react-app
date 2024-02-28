@@ -1,17 +1,36 @@
-import logo from './logo.svg';
 import './App.css';
+import "@aws-amplify/ui-react/styles.css";
+import Test from './Test';
+import Home from './Routes/Home';
+
+import {
+  createBrowserRouter,
+  RouterProvider
+} from "react-router-dom";
+import HomeNavigator from './Components/HomeNavigator';
+import MainScreen from './Components/MainScreen';
+
+
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <HomeNavigator/>,
+    children: [
+      { path: '/', element: <MainScreen/>},
+      { path: '/test', element: <Test/>},
+      { path: '/home', element: <Home/>}
+    ]
+  }
+  
+])
+
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Hello from Version 1.0
-        </p>
-      </header>
-    </div>
-  );
+    <RouterProvider router = {router} /> 
+  )
 }
 
 export default App;
+
+
