@@ -247,7 +247,7 @@ const components = {
   
   export default function Test() {
     return (
-      <Authenticator formFields={formFields} components={components}>
+      <Authenticator >
         {({ signOut }) => <button onClick={signOut}>Sign out</button>}
       </Authenticator>
     );

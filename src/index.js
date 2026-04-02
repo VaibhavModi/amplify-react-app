@@ -1,6 +1,6 @@
 import React from 'react';
-import MainScreen from './Components/MainScreen';
 import ReactDOM from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
 import './index.css';
 
 import reportWebVitals from './reportWebVitals';
@@ -8,7 +8,6 @@ import reportWebVitals from './reportWebVitals';
 import { Amplify } from 'aws-amplify';
 import config from './aws-exports';
 import App from './App';
-import HomeNavigator from './Components/HomeNavigator';
 Amplify.configure(config);
 
 
@@ -16,7 +15,9 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <noscript>Your browser does not support JavaScript!</noscript>
-    <App />
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
   </React.StrictMode>
 );
 
