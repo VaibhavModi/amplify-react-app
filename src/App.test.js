@@ -1,13 +1,8 @@
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
 import App from './App';
 
 test('renders homepage headline', () => {
-  render(
-    <MemoryRouter>
-      <App />
-    </MemoryRouter>
-  );
+  render(<App />);
   expect(
     screen.getByRole('heading', {
       name: /choose the doorway that describes you\./i,

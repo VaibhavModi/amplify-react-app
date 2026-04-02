@@ -1,6 +1,14 @@
-import { useLocation, useNavigate } from 'react-router-dom';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import profilePortrait from './images/profile-portrait.png';
 import './App.css';
+
+const loadRecruiterPage = () => import('./gateways/RecruiterPage');
+const loadVisitorPage = () => import('./gateways/VisitorPage');
+const loadFriendPage = () => import('./gateways/FriendPage');
+
+const RecruiterPage = lazy(loadRecruiterPage);
+const VisitorPage = lazy(loadVisitorPage);
+const FriendPage = lazy(loadFriendPage);
 
 const gateways = {
   recruiter: {
@@ -27,18 +35,32 @@ const gateways = {
 
 const gatewayOrder = ['recruiter', 'visitor', 'friend'];
 const validViews = new Set(['home', ...gatewayOrder]);
+const routeComponents = {
+  recruiter: RecruiterPage,
+  visitor: VisitorPage,
+  friend: FriendPage,
+};
+const routeLoaders = {
+  recruiter: loadRecruiterPage,
+  visitor: loadVisitorPage,
+  friend: loadFriendPage,
+};
 
-function Header({ activeView }) {
+function Header({ activeView, goHome }) {
   const routeOpen = activeView !== 'home';
+  const handleHomeClick = (event) => {
+    event.preventDefault();
+    goHome();
+  };
 
   return (
     <header className={routeOpen ? 'topbar topbar--compact' : 'topbar'}>
-      <div className="brand-lockup">
+      <a className="brand-lockup brand-lockup-link" href="/" onClick={handleHomeClick}>
         <span className={routeOpen ? 'header-photo-wrap is-visible' : 'header-photo-wrap'} aria-hidden="true">
-          <img src={profilePortrait} alt="" className="header-photo" />
+          <img src={profilePortrait} alt="" className="header-photo" width="675" height="900" />
         </span>
         <span className="brand">vaibhav modi</span>
-      </div>
+      </a>
       <div className="topbar-links" aria-label="Future sections">
         <span>tech stack</span>
         <span>social</span>
@@ -56,7 +78,15 @@ function HomeFrame({ openView }) {
           <div className="photo-panel" aria-label="Profile photo">
             <div className="photo-ring">
               <div className="photo-placeholder">
-                <img src={profilePortrait} alt="Portrait of Vaibhav Modi" className="profile-photo" />
+                <img
+                  src={profilePortrait}
+                  alt="Portrait Photo"
+                  className="profile-photo"
+                  width="675"
+                  height="900"
+                  fetchPriority="high"
+                  decoding="async"
+                />
               </div>
             </div>
           </div>
@@ -101,41 +131,75 @@ function HomeFrame({ openView }) {
 
 function RouteFrame({ view, goHome }) {
   const selectedGateway = gateways[view];
+  const RoutePage = routeComponents[view];
 
   return (
     <section className={`route-frame route-frame--${selectedGateway.accent}`}>
       <div className="route-frame__inner">
-        <p className="eyebrow">New frame</p>
-        <h1>{selectedGateway.label} page</h1>
-        <p className="route-copy">
-          This is the shared content frame for the {selectedGateway.label.toLowerCase()} route.
-        </p>
-        <div className="route-actions">
-          <button className="ghost-button" onClick={goHome} type="button">
-            Back to home
-          </button>
-        </div>
+        <Suspense
+          fallback={
+            <>
+              <p className="eyebrow">Loading</p>
+              <h1>{selectedGateway.label} page</h1>
+              <p className="route-copy">Loading this doorway...</p>
+            </>
+          }
+        >
+          <RoutePage goHome={goHome} />
+        </Suspense>
       </div>
     </section>
   );
 }
 
 function App() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const pathView = location.pathname === '/' ? 'home' : location.pathname.replace(/^\//, '');
+  const [pathname, setPathname] = useState(() => window.location.pathname);
+  const pathView = pathname === '/' ? 'home' : pathname.replace(/^\//, '');
   const currentView = validViews.has(pathView) ? pathView : 'home';
 
   const openView = (view) => {
-    navigate(view === 'home' ? '/' : `/${view}`);
+    const nextPath = view === 'home' ? '/' : `/${view}`;
+    if (window.location.pathname !== nextPath) {
+      window.history.pushState({}, '', nextPath);
+      setPathname(nextPath);
+    }
   };
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setPathname(window.location.pathname);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  useEffect(() => {
+    if (currentView !== 'home') {
+      return undefined;
+    }
+
+    const preloadRoutes = () => {
+      Object.values(routeLoaders).forEach((loadRoute) => {
+        loadRoute();
+      });
+    };
+
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      const idleId = window.requestIdleCallback(preloadRoutes, { timeout: 3000 });
+      return () => window.cancelIdleCallback(idleId);
+    }
+
+    const timerId = window.setTimeout(preloadRoutes, 2500);
+    return () => window.clearTimeout(timerId);
+  }, [currentView]);
 
   return (
     <div className="site-shell">
       <div className="site-noise" aria-hidden="true" />
 
       <main className="operator-stage">
-        <Header activeView={currentView} />
+        <Header activeView={currentView} goHome={() => openView('home')} />
 
         {currentView === 'home' ? (
           <HomeFrame openView={openView} />

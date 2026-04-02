@@ -16,8 +16,7 @@
 
 body {
   background:
-    radial-gradient(circle at top, rgba(114, 232, 255, 0.08), transparent 28%),
-    radial-gradient(circle at 80% 20%, rgba(244, 96, 255, 0.07), transparent 22%),
+    radial-gradient(circle at top, rgba(114, 232, 255, 0.05), transparent 24%),
     linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
   color: var(--text);
 }
@@ -34,21 +33,21 @@ button {
 
 .site-noise {
   inset: 0;
-  opacity: 0.18;
+  opacity: 0.08;
   pointer-events: none;
   position: fixed;
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
-  background-size: 26px 26px;
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 32px 32px;
 }
 
 .operator-stage {
-  backdrop-filter: blur(18px);
-  background: rgba(11, 14, 20, 0.62);
+  background:
+    linear-gradient(180deg, rgba(15, 18, 26, 0.94), rgba(18, 22, 31, 0.96));
   border: 1px solid var(--line);
   border-radius: 1.6rem;
-  box-shadow: var(--shadow);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
   display: grid;
   grid-template-rows: auto 1fr;
   gap: 1.25rem;
@@ -84,6 +83,12 @@ button {
   display: flex;
   gap: 0.75rem;
   min-width: 0;
+}
+
+.brand-lockup-link {
+  color: inherit;
+  cursor: pointer;
+  text-decoration: none;
 }
 
 .brand,
@@ -182,7 +187,7 @@ button {
 .photo-ring {
   align-items: center;
   background:
-    radial-gradient(circle at center, rgba(114, 232, 255, 0.08), rgba(12, 16, 24, 0.28) 58%, transparent 72%);
+    radial-gradient(circle at center, rgba(114, 232, 255, 0.06), rgba(12, 16, 24, 0.22) 54%, transparent 72%);
   border: 1px solid rgba(114, 232, 255, 0.14);
   border-radius: 999px;
   display: flex;
@@ -195,12 +200,11 @@ button {
   align-items: center;
   aspect-ratio: 1;
   background:
-    radial-gradient(circle at 50% 35%, rgba(114, 232, 255, 0.12), transparent 48%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01)),
-    rgba(17, 22, 30, 0.5);
+    radial-gradient(circle at 50% 35%, rgba(114, 232, 255, 0.08), transparent 45%),
+    rgba(17, 22, 30, 0.52);
   border: 1px dashed rgba(158, 168, 184, 0.3);
   border-radius: 999px;
-  box-shadow: 0 0 0 1px rgba(114, 232, 255, 0.08);
+  box-shadow: 0 0 0 1px rgba(114, 232, 255, 0.06);
   display: flex;
   justify-content: center;
   align-items: flex-start;
@@ -367,6 +371,14 @@ button {
 }
 
 @media (max-width: 859px) {
+  .site-shell {
+    padding: 0.75rem;
+  }
+
+  .site-noise {
+    display: none;
+  }
+
   .topbar {
     justify-content: center;
   }
@@ -380,8 +392,10 @@ button {
   }
 
   .operator-stage {
+    box-shadow: none;
     gap: 1.5rem;
     min-height: auto;
+    padding: 0.9rem 1rem 1.15rem;
   }
 
   .operator-copy {
