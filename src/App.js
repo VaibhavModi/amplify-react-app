@@ -120,7 +120,7 @@ function HomeFrame({ openView }) {
                   className="profile-photo"
                   width="498"
                   height="664"
-                  fetchPriority="high"
+                  fetchpriority="high"
                   decoding="async"
                 />
               </div>
