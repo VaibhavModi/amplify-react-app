@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
-import profilePortrait from './images/profile-portrait.webp';
+import profilePortrait from './images/profile-portrait.png';
 import './App.css';
 
 

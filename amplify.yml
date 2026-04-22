@@ -14,8 +14,3 @@ frontend:
   cache:
     paths:
       - node_modules/**/*
-customHeaders:
-  - pattern: '**/*.webp'
-    headers:
-      - key: 'Content-Type'
-        value: 'image/webp'
