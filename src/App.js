@@ -1,5 +1,4 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
-import { record } from 'aws-amplify/analytics';
 import profilePortrait from './images/profile-portrait.png';
 import './App.css';
 
@@ -235,11 +234,7 @@ function App() {
     setPathname('/');
   };
 
-  useEffect(() => {
-    record({ name: 'pageView', attributes: { page: currentView } });
-  }, [currentView]);
-
-  useEffect(() => {
+useEffect(() => {
     document.title = 'Landing Zone';
     let timer;
     const handleVisibility = () => {

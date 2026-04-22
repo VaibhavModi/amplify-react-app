@@ -1,11 +1,4 @@
 export type AmplifyDependentResourcesAttributes = {
-  "analytics": {
-    "amplifyreactapp": {
-      "Id": "string",
-      "Region": "string",
-      "appName": "string"
-    }
-  },
   "auth": {
     "amplifyreactapp726ab84e": {
       "AppClientID": "string",
