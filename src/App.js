@@ -74,8 +74,10 @@ function Header({ activeView, goHome }) {
         <span className="brand">vaibhav modi</span>
       </a>
       <nav className="topbar-links" aria-label="Site links">
-        <a className="topbar-link" href="https://github.com/vaibhavmodi" target="_blank" rel="noreferrer">github</a>
-        <a className="topbar-link" href="https://www.linkedin.com/in/vaibhavmodir/" target="_blank" rel="noreferrer">linkedin</a>
+        <a className="topbar-link" href="https://github.com/vaibhavmodi" target="_blank" rel="noreferrer"
+          onClick={() => !/^(localhost|127\.|192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/.test(window.location.hostname) && window.gtag?.('event', 'social_click', { platform: 'github', transport_type: 'beacon' })}>github</a>
+        <a className="topbar-link" href="https://www.linkedin.com/in/vaibhavmodir/" target="_blank" rel="noreferrer"
+          onClick={() => !/^(localhost|127\.|192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/.test(window.location.hostname) && window.gtag?.('event', 'social_click', { platform: 'linkedin', transport_type: 'beacon' })}>linkedin</a>
       </nav>
       <button
         className="menu-toggle"
@@ -235,16 +237,26 @@ function App() {
   };
 
   useEffect(() => {
-    if (typeof window.gtag === 'function') {
+    const titles = {
+      home: 'Landing Zone',
+      recruiter: 'Recruiter',
+      visitor: 'Visitor',
+      friend: 'Friend',
+    };
+    const title = titles[currentView] ?? 'Landing Zone';
+    document.title = title;
+    const isLocal = /^(localhost|127\.|192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/.test(window.location.hostname);
+    if (typeof window.gtag === 'function' && !isLocal) {
+      const path = currentView === 'home' ? '/' : `/${currentView}`;
       window.gtag('event', 'page_view', {
-        page_path: currentView === 'home' ? '/' : `/${currentView}`,
-        page_title: currentView,
+        page_path: path,
+        page_title: title,
+        page_location: window.location.origin + path,
       });
     }
   }, [currentView]);
 
   useEffect(() => {
-    document.title = 'Landing Zone';
     let timer;
     const handleVisibility = () => {
       clearTimeout(timer);
@@ -252,7 +264,9 @@ function App() {
         document.documentElement.classList.add('tab-hidden');
         document.title = 'you left something here 👀';
       } else {
-        document.title = 'Landing Zone';
+        document.title = document.title !== 'you left something here 👀'
+          ? document.title
+          : (currentView === 'home' ? 'Landing Zone' : gateways[currentView]?.label ?? 'Landing Zone');
         // hold red for 2s so user sees it, then transition to green
         timer = setTimeout(() => {
           document.documentElement.classList.remove('tab-hidden');
