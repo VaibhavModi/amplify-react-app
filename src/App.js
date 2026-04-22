@@ -234,7 +234,16 @@ function App() {
     setPathname('/');
   };
 
-useEffect(() => {
+  useEffect(() => {
+    if (typeof window.gtag === 'function') {
+      window.gtag('event', 'page_view', {
+        page_path: currentView === 'home' ? '/' : `/${currentView}`,
+        page_title: currentView,
+      });
+    }
+  }, [currentView]);
+
+  useEffect(() => {
     document.title = 'Landing Zone';
     let timer;
     const handleVisibility = () => {
