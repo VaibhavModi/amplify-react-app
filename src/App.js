@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import profilePortrait from './images/profile-portrait.png';
 import './App.css';
 
+
 const loadRecruiterPage = () => import('./gateways/RecruiterPage');
 const loadVisitorPage = () => import('./gateways/VisitorPage');
 const loadFriendPage = () => import('./gateways/FriendPage');
@@ -17,6 +18,7 @@ const gateways = {
     detail:
       'A direct way into my work, how I think, and the practical signals that matter when you are hiring.',
     accent: 'cyan',
+    shortcut: 'R',
   },
   visitor: {
     label: 'Visitor',
@@ -24,12 +26,14 @@ const gateways = {
     detail:
       'A more open path through who I am, what I am building, and the ideas that keep pulling me back in.',
     accent: 'magenta',
+    shortcut: 'V',
   },
   friend: {
     label: 'Friend',
     button: 'Friend',
     detail: 'A softer route through side quests, shared context, and the things I am into right now.',
     accent: 'gold',
+    shortcut: 'F',
   },
 };
 
@@ -48,29 +52,59 @@ const routeLoaders = {
 
 function Header({ activeView, goHome }) {
   const routeOpen = activeView !== 'home';
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [activeView]);
+
   const handleHomeClick = (event) => {
     event.preventDefault();
     goHome();
   };
 
   return (
-    <header className={routeOpen ? 'topbar topbar--compact' : 'topbar'}>
+    <header className={`topbar${routeOpen ? ' topbar--compact' : ''}${menuOpen ? ' topbar--menu-open' : ''}`}>
       <a className="brand-lockup brand-lockup-link" href="/" onClick={handleHomeClick}>
-        <span className={routeOpen ? 'header-photo-wrap is-visible' : 'header-photo-wrap'} aria-hidden="true">
-          <img src={profilePortrait} alt="" className="header-photo" width="675" height="900" />
+        <span className={routeOpen ? 'header-photo-frame header-photo-frame--active' : 'header-photo-frame'}>
+          <span className={routeOpen ? 'header-photo-wrap is-visible' : 'header-photo-wrap'} aria-hidden="true">
+            <img src={profilePortrait} alt="" className="header-photo" width="675" height="900" />
+          </span>
         </span>
         <span className="brand">vaibhav modi</span>
       </a>
-      <div className="topbar-links" aria-label="Future sections">
-        <span>tech stack</span>
-        <span>social</span>
-        <span>blog</span>
-      </div>
+      <nav className="topbar-links" aria-label="Site links">
+        <a className="topbar-link" href="https://github.com/vaibhavmodi" target="_blank" rel="noreferrer">github</a>
+        <a className="topbar-link" href="https://www.linkedin.com/in/vaibhavmodir/" target="_blank" rel="noreferrer">linkedin</a>
+      </nav>
+      <button
+        className="menu-toggle"
+        onClick={() => setMenuOpen((o) => !o)}
+        type="button"
+        aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+        aria-expanded={menuOpen}
+      >
+        {menuOpen ? '✕' : '☰'}
+      </button>
     </header>
   );
 }
 
 function HomeFrame({ openView }) {
+  const [hoveredGateway, setHoveredGateway] = useState(null);
+
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      const map = { r: 'recruiter', v: 'visitor', f: 'friend' };
+      const match = map[e.key.toLowerCase()];
+      if (match) openView(match);
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [openView]);
+
   return (
     <section className="route-frame route-frame--home">
       <div className="route-frame__inner route-frame__inner--home">
@@ -89,6 +123,14 @@ function HomeFrame({ openView }) {
                 />
               </div>
             </div>
+            <p className="home-factline">
+              <span className="home-factline__label">fun fact</span>
+              Did you know Earth's moon is the only moon without a name?
+            </p>
+            <p className="currently-line">
+              <span className="currently-label">Currently →</span>
+              {' '}building this site
+            </p>
           </div>
 
           <div className="content-panel">
@@ -114,13 +156,19 @@ function HomeFrame({ openView }) {
                       key={key}
                       className={`gateway-button gateway-button--${gateway.accent}`}
                       onClick={() => openView(key)}
+                      onMouseEnter={() => setHoveredGateway(key)}
+                      onMouseLeave={() => setHoveredGateway(null)}
                       type="button"
                     >
                       {gateway.button}
+                      <kbd className="gateway-key">{gateway.shortcut}</kbd>
                     </button>
                   );
                 })}
               </div>
+              <p className={`gateway-detail${hoveredGateway ? ' gateway-detail--visible' : ''}`}>
+                {hoveredGateway ? gateways[hoveredGateway].detail : '\u00A0'}
+              </p>
             </section>
           </div>
         </section>
@@ -160,19 +208,72 @@ function App() {
   const openView = (view) => {
     const nextPath = view === 'home' ? '/' : `/${view}`;
     if (window.location.pathname !== nextPath) {
-      window.history.pushState({}, '', nextPath);
+      window.history.pushState(
+        {
+          appPath: view,
+          fromHome: currentView === 'home',
+        },
+        '',
+        nextPath
+      );
       setPathname(nextPath);
     }
   };
+
+  const goHome = () => {
+    if (currentView === 'home') {
+      return;
+    }
+
+    if (window.history.state?.fromHome) {
+      window.history.back();
+      return;
+    }
+
+    window.history.replaceState({ appPath: 'home', fromHome: false }, '', '/');
+    setPathname('/');
+  };
+
+  useEffect(() => {
+    document.title = 'Landing Zone';
+    let timer;
+    const handleVisibility = () => {
+      clearTimeout(timer);
+      if (document.hidden) {
+        document.documentElement.classList.add('tab-hidden');
+        document.title = 'you left something here 👀';
+      } else {
+        document.title = 'Landing Zone';
+        // hold red for 2s so user sees it, then transition to green
+        timer = setTimeout(() => {
+          document.documentElement.classList.remove('tab-hidden');
+        }, 500);
+      }
+    };
+    window.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      window.removeEventListener('visibilitychange', handleVisibility);
+      clearTimeout(timer);
+    };
+  }, []);
 
   useEffect(() => {
     const handlePopState = () => {
       setPathname(window.location.pathname);
     };
 
+    window.history.replaceState(
+      {
+        appPath: currentView,
+        fromHome: window.history.state?.fromHome ?? false,
+      },
+      '',
+      window.location.pathname
+    );
+
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  }, [currentView]);
 
   useEffect(() => {
     if (currentView !== 'home') {
@@ -199,12 +300,12 @@ function App() {
       <div className="site-noise" aria-hidden="true" />
 
       <main className="operator-stage">
-        <Header activeView={currentView} goHome={() => openView('home')} />
+        <Header activeView={currentView} goHome={goHome} />
 
         {currentView === 'home' ? (
           <HomeFrame openView={openView} />
         ) : (
-          <RouteFrame view={currentView} goHome={() => openView('home')} />
+          <RouteFrame view={currentView} goHome={goHome} />
         )}
       </main>
     </div>
