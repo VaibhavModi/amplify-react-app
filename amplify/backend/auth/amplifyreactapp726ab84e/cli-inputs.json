@@ -2,7 +2,7 @@
   "version": "1",
   "cognitoConfig": {
     "identityPoolName": "amplifyreactapp726ab84e_identitypool_726ab84e",
-    "allowUnauthenticatedIdentities": false,
+    "allowUnauthenticatedIdentities": true,
     "resourceNameTruncated": "amplif726ab84e",
     "userPoolName": "amplifyreactapp726ab84e_userpool_726ab84e",
     "autoVerifiedAttributes": [

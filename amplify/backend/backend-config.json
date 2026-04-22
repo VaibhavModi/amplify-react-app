@@ -1,4 +1,10 @@
 {
+  "analytics": {
+    "amplifyreactapp": {
+      "providerPlugin": "awscloudformation",
+      "service": "Pinpoint"
+    }
+  },
   "auth": {
     "amplifyreactapp726ab84e": {
       "customAuth": false,

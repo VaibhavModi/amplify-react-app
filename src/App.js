@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
+import { record } from 'aws-amplify/analytics';
 import profilePortrait from './images/profile-portrait.png';
 import './App.css';
 
@@ -233,6 +234,10 @@ function App() {
     window.history.replaceState({ appPath: 'home', fromHome: false }, '', '/');
     setPathname('/');
   };
+
+  useEffect(() => {
+    record({ name: 'pageView', attributes: { page: currentView } });
+  }, [currentView]);
 
   useEffect(() => {
     document.title = 'Landing Zone';
