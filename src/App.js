@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
+import profilePortraitWebp from './images/profile-portrait.webp';
 import profilePortrait from './images/profile-portrait.png';
 import './App.css';
 
@@ -68,7 +69,10 @@ function Header({ activeView, goHome }) {
       <a className="brand-lockup brand-lockup-link" href="/" onClick={handleHomeClick}>
         <span className={routeOpen ? 'header-photo-frame header-photo-frame--active' : 'header-photo-frame'}>
           <span className={routeOpen ? 'header-photo-wrap is-visible' : 'header-photo-wrap'} aria-hidden="true">
-            <img src={profilePortrait} alt="" className="header-photo" width="675" height="900" />
+            <picture>
+              <source srcSet={profilePortraitWebp} type="image/webp" />
+              <img src={profilePortrait} alt="" className="header-photo" width="498" height="664" />
+            </picture>
           </span>
         </span>
         <span className="brand">vaibhav modi</span>
@@ -114,15 +118,18 @@ function HomeFrame({ openView }) {
           <div className="photo-panel" aria-label="Profile photo">
             <div className="photo-ring">
               <div className="photo-placeholder">
-                <img
-                  src={profilePortrait}
-                  alt="Portrait Photo"
-                  className="profile-photo"
-                  width="675"
-                  height="900"
-                  fetchPriority="high"
-                  decoding="async"
-                />
+                <picture>
+                  <source srcSet={profilePortraitWebp} type="image/webp" />
+                  <img
+                    src={profilePortrait}
+                    alt="Portrait Photo"
+                    className="profile-photo"
+                    width="498"
+                    height="664"
+                    fetchPriority="high"
+                    decoding="async"
+                  />
+                </picture>
               </div>
             </div>
             <p className="home-factline">
