@@ -329,9 +329,6 @@ button {
 }
 
 
-.photo-placeholder picture {
-  display: contents;
-}
 
 .profile-photo {
   display: block;
