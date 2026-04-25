@@ -127,9 +127,7 @@ function HomeFrame({ openView }) {
                 like making digital spaces feel a little more human than they need to be.
               </p>
               <h1>
-                Choose the doorway
-                <br />
-                that describes you.
+                Choose a way in.
               </h1>
             </div>
 
@@ -247,11 +245,11 @@ function App() {
 
   useEffect(() => {
     const titles = {
-      home: 'Landing Zone',
+      home: 'Vaibhav Modi: Landing Zone',
       recruiter: 'Recruiter',
       friend: 'Friend',
     };
-    const title = titles[currentView] ?? 'Landing Zone';
+    const title = titles[currentView] ?? 'Vaibhav Modi: Landing Zone';
     document.title = title;
     const isLocal = /^(localhost|127\.|192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/.test(window.location.hostname);
     if (typeof window.gtag === 'function' && !isLocal) {
@@ -274,7 +272,7 @@ function App() {
       } else {
         document.title = document.title !== 'you left something here 👀'
           ? document.title
-          : (currentView === 'home' ? 'Landing Zone' : gateways[currentView]?.label ?? 'Landing Zone');
+          : (currentView === 'home' ? 'Vaibhav Modi: Landing Zone' : gateways[currentView]?.label ?? 'Vaibhav Modi: Landing Zone');
 
         // hold red for 2s so user sees it, then transition to green
         timer = setTimeout(() => {

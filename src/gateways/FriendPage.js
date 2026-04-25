@@ -1,16 +1,16 @@
-export default function FriendPage({ goHome }) {
+export default function FriendPage() {
   return (
-    <>
-      <p className="eyebrow">New frame</p>
-      <h1>Friend page</h1>
-      <p className="route-copy">
-        This is the shared content frame for the friend route.
-      </p>
-      <div className="route-actions">
-        <button className="ghost-button" onClick={goHome} type="button">
-          Back to home
-        </button>
+    <section className="friend-page">
+      <div className="friend-hero">
+        <h1 className="friend-hero__title">hey, you found the fun page</h1>
+        <p className="friend-hero__subtitle">
+          no resumes here. just vibes, games, and chaos.
+        </p>
+        <div className="friend-status" aria-label="Current status">
+          <span className="friend-status__dot" aria-hidden="true" />
+          <span className="friend-status__text">probably playing chess rn</span>
+        </div>
       </div>
-    </>
+    </section>
   );
 }
