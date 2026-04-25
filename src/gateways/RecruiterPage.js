@@ -40,18 +40,72 @@ const focusAreas = [
   },
 ];
 
+const quickContactPrompts = [
+  "I'm hiring",
+  "Let's collaborate",
+  'Just saying hi',
+];
+
+const contactFormTestingMode = false;
+const submittedChatsStorageKey = 'recruiter-page-submitted-chats';
+const contactProfileStorageKey = 'recruiter-page-contact-profile';
+const messageReceivedReply = 'Message received. I will get back to you shortly.';
+
 export default function RecruiterPage() {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedAreas, setSelectedAreas] = useState([]);
-  const [zoneTwoSeen, setZoneTwoSeen] = useState(false);
-  const [resumeFloating, setResumeFloating] = useState(false);
+  const [senderName, setSenderName] = useState(() => {
+    if (typeof window === 'undefined') {
+      return '';
+    }
+
+    try {
+      const storedProfile = window.localStorage.getItem(contactProfileStorageKey);
+      const parsedProfile = storedProfile ? JSON.parse(storedProfile) : null;
+      return typeof parsedProfile?.name === 'string' ? parsedProfile.name : '';
+    } catch {
+      return '';
+    }
+  });
+  const [messageDraft, setMessageDraft] = useState('');
+  const [replyEmail, setReplyEmail] = useState(() => {
+    if (typeof window === 'undefined') {
+      return '';
+    }
+
+    try {
+      const storedProfile = window.localStorage.getItem(contactProfileStorageKey);
+      const parsedProfile = storedProfile ? JSON.parse(storedProfile) : null;
+      return typeof parsedProfile?.email === 'string' ? parsedProfile.email : '';
+    } catch {
+      return '';
+    }
+  });
+  const [submittedChats, setSubmittedChats] = useState(() => {
+    if (typeof window === 'undefined') {
+      return [];
+    }
+
+    try {
+      const storedChats = window.localStorage.getItem(submittedChatsStorageKey);
+      const parsedChats = storedChats ? JSON.parse(storedChats) : [];
+      return Array.isArray(parsedChats) ? parsedChats : [];
+    } catch {
+      return [];
+    }
+  });
+  const [pendingChat, setPendingChat] = useState(null);
+  const [sendState, setSendState] = useState('idle');
+  const [sendFeedback, setSendFeedback] = useState('');
   const zoneTwoRef = useRef(null);
-  const resumeZoneRef = useRef(null);
+  const chatThreadRef = useRef(null);
   const fileId = '1Np1j9jwn4O_rdu1i0X74qZV4i9pBFN_w';
   const resumeHref = `https://drive.google.com/file/d/${fileId}/view`;
   const embedSrc = `https://drive.google.com/file/d/${fileId}/preview`;
   const downloadHref = `https://drive.google.com/uc?export=download&id=${fileId}`;
   const modalRoot = typeof document !== 'undefined' ? document.querySelector('.site-shell') : null;
+  const web3FormsEndpoint = 'https://api.web3forms.com/submit';
+  const web3FormsAccessKey = 'efc37f5d-5303-4193-9cd9-450966dd0ee1';
 
   useEffect(() => {
     if (!isOpen) {
@@ -75,37 +129,44 @@ export default function RecruiterPage() {
   }, [isOpen]);
 
   useEffect(() => {
-    const zoneTwoNode = zoneTwoRef.current;
-    const resumeZoneNode = resumeZoneRef.current;
+    const chatThreadNode = chatThreadRef.current;
 
-    if (!zoneTwoNode || !resumeZoneNode || typeof IntersectionObserver === 'undefined') {
-      return undefined;
+    if (!chatThreadNode) {
+      return;
     }
 
-    const zoneTwoObserver = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setZoneTwoSeen(true);
-        }
-      },
-      { threshold: 0.35 }
-    );
+    chatThreadNode.scrollTop = chatThreadNode.scrollHeight;
+  }, [submittedChats, pendingChat]);
 
-    const resumeObserver = new IntersectionObserver(
-      ([entry]) => {
-        setResumeFloating(!entry.isIntersecting && entry.boundingClientRect.top < 0);
-      },
-      { threshold: 0.2 }
-    );
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
 
-    zoneTwoObserver.observe(zoneTwoNode);
-    resumeObserver.observe(resumeZoneNode);
+    try {
+      window.localStorage.setItem(submittedChatsStorageKey, JSON.stringify(submittedChats));
+    } catch {
+      // Ignore storage write failures and keep the in-memory chat history working.
+    }
+  }, [submittedChats]);
 
-    return () => {
-      zoneTwoObserver.disconnect();
-      resumeObserver.disconnect();
-    };
-  }, []);
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(
+        contactProfileStorageKey,
+        JSON.stringify({
+          name: senderName,
+          email: replyEmail,
+        })
+      );
+    } catch {
+      // Ignore storage write failures and keep the form usable.
+    }
+  }, [senderName, replyEmail]);
 
   const selectedProofs = useMemo(
     () => focusAreas.filter((area) => selectedAreas.includes(area.id)),
@@ -118,6 +179,146 @@ export default function RecruiterPage() {
         ? current.filter((id) => id !== areaId)
         : [...current, areaId]
     ));
+  };
+
+  const applyQuickPrompt = (prompt) => {
+    setSendFeedback('');
+    setSendState('idle');
+    setMessageDraft((current) => {
+      if (!current.trim()) {
+        return `${prompt} — `;
+      }
+
+      return current;
+    });
+  };
+
+  const appendSubmittedChat = ({ name, email, message }) => {
+    const chatId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+    setSubmittedChats((current) => [...current, {
+      id: chatId,
+      name,
+      email,
+      message,
+      responseText: '',
+    }]);
+
+    window.setTimeout(() => {
+      setSubmittedChats((current) => current.map((chat) => (
+        chat.id === chatId
+          ? { ...chat, responseText: messageReceivedReply }
+          : chat
+      )));
+    }, 1000);
+  };
+
+  const clearConversation = () => {
+    setSenderName('');
+    setReplyEmail('');
+    setMessageDraft('');
+    setSubmittedChats([]);
+    setSendState('idle');
+    setSendFeedback('');
+
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    try {
+      window.localStorage.removeItem(submittedChatsStorageKey);
+      window.localStorage.removeItem(contactProfileStorageKey);
+    } catch {
+      // Ignore storage failures and still clear in-memory state.
+    }
+  };
+
+  const handleContactSubmit = async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+
+    const trimmedName = senderName.trim();
+    const trimmedMessage = messageDraft.trim();
+    const trimmedEmail = replyEmail.trim();
+    const emailIsValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail);
+
+    if (!trimmedName) {
+      setSendState('error');
+      setSendFeedback('Add your name so I know who reached out.');
+      return;
+    }
+
+    if (!trimmedMessage) {
+      setSendState('error');
+      setSendFeedback('Add a message before sending.');
+      return;
+    }
+
+    if (!emailIsValid) {
+      setSendState('error');
+      setSendFeedback('Add a valid reply email so I know where to respond.');
+      return;
+    }
+
+    setSendState('sending');
+    setSendFeedback('');
+    setPendingChat({
+      name: trimmedName,
+      email: trimmedEmail,
+      message: trimmedMessage,
+    });
+
+    try {
+      if (contactFormTestingMode) {
+        appendSubmittedChat({
+          name: trimmedName,
+          email: trimmedEmail,
+          message: trimmedMessage,
+        });
+        setPendingChat(null);
+        setSendState('success');
+        setSendFeedback('');
+        setMessageDraft('');
+        return;
+      }
+
+      const formData = new FormData(form);
+      formData.set('access_key', web3FormsAccessKey);
+      formData.set('name', trimmedName);
+      formData.set('email', trimmedEmail);
+      formData.set('message', trimmedMessage);
+      formData.set('subject', 'New recruiter page message');
+      formData.set('from_name', 'Recruiter Page Chat');
+
+      const response = await fetch(form.action, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+        },
+        body: formData,
+      });
+
+      const result = await response.json();
+      const responseMessage = result.message || result?.body?.message;
+
+      if (!response.ok || !result.success) {
+        throw new Error(responseMessage || `Request failed with status ${response.status}`);
+      }
+
+      appendSubmittedChat({
+        name: trimmedName,
+        email: trimmedEmail,
+        message: trimmedMessage,
+      });
+      setPendingChat(null);
+      setSendState('success');
+      setSendFeedback('');
+      setMessageDraft('');
+    } catch (error) {
+      setPendingChat(null);
+      setSendState('error');
+      setSendFeedback(error.message || 'Something went wrong while sending. Please try again in a moment.');
+    }
   };
 
   const resumeCard = (
@@ -174,6 +375,8 @@ export default function RecruiterPage() {
           </div>
         </section>
 
+        <div className="story-separator" aria-hidden="true" />
+
         <section className="story-zone story-zone--conversation" ref={zoneTwoRef}>
           <div className="story-conversation-layout">
             <div className="story-conversation-copy">
@@ -213,10 +416,9 @@ export default function RecruiterPage() {
           </div>
         </section>
 
-        <section
-          className={`story-zone story-zone--resume${zoneTwoSeen ? ' story-zone--resume-visible' : ''}`}
-          ref={resumeZoneRef}
-        >
+        <div className="story-separator" aria-hidden="true" />
+
+        <section className="story-zone story-zone--resume">
           <div className="story-resume-layout">
             <div className="story-resume-copyblock">
               <p className="story-kicker">formal version</p>
@@ -228,15 +430,191 @@ export default function RecruiterPage() {
             <div className="story-resume-card">{resumeCard}</div>
           </div>
         </section>
-      </div>
 
-      {resumeFloating && (
-        <div className="resume-float-dock" aria-label="Floating resume shortcut">
-          <div className="resume-float-dock__inner">
-            {resumeCard}
+        <div className="story-separator" aria-hidden="true" />
+
+        <section className="story-zone story-zone--contact">
+          <div className="story-contact-layout">
+            <div className="story-contact-copyblock">
+              <p className="story-kicker">contact me</p>
+              <h2 className="story-contact-title">Let&apos;s Talk</h2>
+              <p className="story-contact-trust">
+                No sign-in. No redirects. Just write your note and press send.
+              </p>
+              <p className="story-contact-subcopy">
+                If there&apos;s a role, project, or idea worth talking about, send it here and I&apos;ll reply directly.
+              </p>
+            </div>
+
+            <div className="contact-chat-shell">
+              <div className="contact-chat-card">
+                <div className="contact-chat-header">
+                  <div className="contact-chat-avatar" aria-hidden="true">VM</div>
+                  <div className="contact-chat-meta">
+                    <p className="contact-chat-name">Vaibhav Modi</p>
+                    <p className="contact-chat-status">
+                      <span className="contact-chat-status-dot" aria-hidden="true" />
+                      Usually replies within a few hours
+                    </p>
+                  </div>
+                </div>
+
+                <div className="contact-chat-thread-wrap">
+                  <div className="contact-chat-thread" ref={chatThreadRef}>
+                    <div className="contact-chat-bubble-row">
+                      <div className="contact-chat-avatar contact-chat-avatar--small" aria-hidden="true">VM</div>
+                      <div className="contact-chat-bubble-wrap">
+                        <p className="contact-chat-bubble">
+                          Hey, thanks for stopping by. I&apos;m open to new opportunities, collaborations, and thoughtful intros.
+                        </p>
+                        <p className="contact-chat-time">Just now</p>
+                      </div>
+                    </div>
+
+                    {submittedChats.map((chat, index) => (
+                      <div key={`${chat.email}-${index}`} className="contact-chat-entry">
+                        <div className="contact-chat-bubble-row contact-chat-bubble-row--sent">
+                          <div className="contact-chat-bubble-wrap contact-chat-bubble-wrap--sent">
+                            <p className="contact-chat-bubble contact-chat-bubble--sent">
+                              {chat.message}
+                            </p>
+                            <p className="contact-chat-time contact-chat-time--sent">
+                              Sent · From {chat.name}
+                            </p>
+                          </div>
+                        </div>
+
+                        {chat.responseText && (
+                          <div className="contact-chat-bubble-row">
+                            <div className="contact-chat-avatar contact-chat-avatar--small" aria-hidden="true">VM</div>
+                            <div className="contact-chat-bubble-wrap">
+                              <p className="contact-chat-bubble">
+                                {chat.responseText}
+                              </p>
+                              <p className="contact-chat-time">Just now</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+
+                    {pendingChat && (
+                      <div className="contact-chat-entry">
+                        <div className="contact-chat-bubble-row contact-chat-bubble-row--sent">
+                          <div className="contact-chat-bubble-wrap contact-chat-bubble-wrap--sent">
+                            <p className="contact-chat-bubble contact-chat-bubble--sent">
+                              {pendingChat.message}
+                            </p>
+                            <p className="contact-chat-time contact-chat-time--sent">
+                              Sending...
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {!messageDraft.trim() && !submittedChats.length && (
+                    <div className="contact-chat-prompts">
+                      <p className="contact-chat-prompts-label">Tap to start a conversation</p>
+                      <div className="contact-chat-prompt-list">
+                        {quickContactPrompts.map((prompt) => (
+                          <button
+                            key={prompt}
+                            className="contact-chat-prompt"
+                            type="button"
+                            onClick={() => applyQuickPrompt(prompt)}
+                          >
+                            {prompt}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <form
+                  className="contact-chat-form"
+                  action={web3FormsEndpoint}
+                  method="POST"
+                  onSubmit={handleContactSubmit}
+                >
+                  <input type="hidden" name="access_key" value={web3FormsAccessKey} />
+                  <input type="hidden" name="subject" value="New recruiter page message" />
+                  <input type="hidden" name="from_name" value="Recruiter Page Chat" />
+                  <input type="checkbox" name="botcheck" className="contact-chat-botcheck" tabIndex="-1" autoComplete="off" />
+
+                  <label className="contact-chat-field">
+                    <span className="contact-chat-label sr-only">Your message</span>
+                    <textarea
+                      className="contact-chat-input contact-chat-input--message"
+                      name="message"
+                      placeholder="Or type your own message..."
+                      rows="3"
+                      value={messageDraft}
+                      onChange={(event) => setMessageDraft(event.target.value)}
+                    />
+                  </label>
+
+                  <div className="contact-chat-identityrow">
+                    <label className="contact-chat-field">
+                      <span className="contact-chat-label sr-only">Your name</span>
+                      <input
+                        className="contact-chat-input"
+                        name="name"
+                        type="text"
+                        placeholder="Your name"
+                        autoComplete="name"
+                        value={senderName}
+                        onChange={(event) => setSenderName(event.target.value)}
+                      />
+                    </label>
+
+                    <label className="contact-chat-replyrow">
+                      <span className="contact-chat-replylabel">Reply to:</span>
+                      <input
+                        className="contact-chat-input"
+                        name="email"
+                        type="email"
+                        placeholder="your@email.com"
+                        autoComplete="email"
+                        value={replyEmail}
+                        onChange={(event) => setReplyEmail(event.target.value)}
+                      />
+                    </label>
+                  </div>
+
+                  <div className="contact-chat-sendrow">
+                    <button
+                      className="contact-chat-send"
+                      type="submit"
+                      disabled={sendState === 'sending'}
+                    >
+                      {sendState === 'sending' ? 'Sending...' : 'Send'}
+                    </button>
+                  </div>
+
+                  <p className={`contact-chat-feedback${sendState === 'error' ? ' contact-chat-feedback--visible' : ''}`} role="status">
+                    {sendFeedback}
+                  </p>
+
+                  <a className="contact-chat-email-link" href="mailto:hi@vaibhavmodi.com">
+                    Prefer email? Reach me at <span>hi@vaibhavmodi.com</span>
+                  </a>
+
+                  <button
+                    className="contact-chat-clear"
+                    type="button"
+                    onClick={clearConversation}
+                  >
+                    Clear conversation
+                  </button>
+                </form>
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        </section>
+      </div>
 
       {isOpen && modalRoot && createPortal(
         <div className="resume-modal" role="dialog" aria-modal="true" aria-label="Resume preview">
@@ -339,7 +717,7 @@ function ResumeCard({ downloadHref, onOpen }) {
         </div>
 
         <footer className="doc-footer">
-          <span className="doc-contact">hello@vaibhavmodi.com</span>
+          <span className="doc-contact">hi@vaibhavmodi.com</span>
           <span className="doc-pdf">PDF</span>
         </footer>
       </article>
