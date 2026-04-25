@@ -135,12 +135,10 @@ export default function RecruiterPage() {
             <div className="story-hero-copy">
               <div className="story-meta-row" aria-label="Location and work preferences">
                 <span className="story-meta-pill">Dallas, TX</span>
-                <span className="story-meta-pill">Open to remote</span>
-                <span className="story-meta-pill">Open to relocate</span>
               </div>
               <p className="story-kicker">recent experience</p>
               <h1 className="story-headline">
-                On ATX Refactor on AWS, I worked on modernizing millions of lines of code and improving performance at scale.
+                On AWS - ATX Refactor, I worked on modernizing millions of lines of code and improving performance at scale.
               </h1>
               <p className="story-line story-line--support">
                 That meant transformation engines, caching, long-running transactions, and systems built for concurrent users.
