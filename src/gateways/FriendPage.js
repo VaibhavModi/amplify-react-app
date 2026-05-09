@@ -54,7 +54,7 @@ async function loadShowcase(signal) {
 
 function GameCard({ game }) {
   const localMeta = showcaseNotesByApp[game.appid] ?? {};
-  const note = localMeta.note ?? 'One of the games I keep around on purpose.';
+  const note = localMeta.note ?? 'A game that has stayed in the rotation for good reason.';
   const tags = localMeta.tags ?? [];
   const status = game.recentlyPlayed ? 'in recent rotation' : 'favorite pick';
 
@@ -123,10 +123,10 @@ export default function FriendPage() {
   return (
     <section className="friend-page">
       <div className="friend-page__intro">
-        <h1 className="friend-page__title">Games I keep coming back to</h1>
+        <p className="friend-page__eyebrow">Games</p>
+        <h1 className="friend-page__title">Recently playing</h1>
         <p className="friend-page__subtitle">
-          A small, intentionally selective slice from my Steam library. Enough to show the taste,
-          not the receipts.
+          A quick look at the games I&apos;ve been spending time with lately.
         </p>
       </div>
 
