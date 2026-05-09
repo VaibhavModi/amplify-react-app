@@ -180,10 +180,6 @@ export default function FriendPage() {
     () => getFeaturedGames(ownedGames, recentlyPlayed, achievementsByApp),
     [ownedGames, recentlyPlayed, achievementsByApp]
   );
-  const recentGames = useMemo(
-    () => recentlyPlayed.slice(0, 5),
-    [recentlyPlayed]
-  );
 
   const stats = useMemo(() => {
     const totalMinutes = ownedGames.reduce((sum, game) => sum + (Number(game.playtime_forever) || 0), 0);
@@ -347,60 +343,10 @@ export default function FriendPage() {
                         )}
                       </div>
 
-                      <div className="steam-game__hours">{formatHours(game.playtime_forever)}</div>
+                      <div className="steam-game__hours">{formatHours(game.playtime_forever)} total</div>
                     </article>
                   );
                 })}
-              </div>
-            </div>
-
-            <div className="steam-section">
-              <div className="steam-section__title">recently played</div>
-              <div className="steam-games">
-                {recentGames.length > 0 ? recentGames.map((game) => {
-                  const isCurrentGame = currentGameId === Number(game.appid);
-
-                  return (
-                    <article className="steam-game" key={`recent-${game.appid}`}>
-                      {isCurrentGame && (
-                        <div className="steam-game__badge">
-                          <span className="steam-game__badge-dot" aria-hidden="true" />
-                          playing now
-                        </div>
-                      )}
-
-                      <img
-                        className="steam-game__art"
-                        src={buildGameHeaderImage(game.appid)}
-                        alt=""
-                        loading="lazy"
-                        onError={(event) => {
-                          event.currentTarget.style.visibility = 'hidden';
-                        }}
-                      />
-
-                      <div className="steam-game__info">
-                        <p className="steam-game__name">{game.name}</p>
-                        <p className="steam-game__meta">
-                          <span>last 2 weeks: {formatHours(game.playtime_2weeks)}</span>
-                          <span aria-hidden="true">·</span>
-                          <span>all time: {formatHours(game.playtime_forever)}</span>
-                        </p>
-                      </div>
-
-                      <div className="steam-game__hours">{formatHours(game.playtime_2weeks)}</div>
-                    </article>
-                  );
-                }) : (
-                  <article className="steam-game">
-                    <div className="steam-game__info">
-                      <p className="steam-game__name">No recent Steam sessions found</p>
-                      <p className="steam-game__meta">
-                        <span>Steam did not return any recently played games for this profile.</span>
-                      </p>
-                    </div>
-                  </article>
-                )}
               </div>
             </div>
 
