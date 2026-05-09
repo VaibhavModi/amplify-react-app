@@ -123,8 +123,7 @@ export default function FriendPage() {
   return (
     <section className="friend-page">
       <div className="friend-page__intro">
-        <p className="friend-page__eyebrow">Games</p>
-        <h1 className="friend-page__title">Recently playing</h1>
+        <h1 className="friend-page__title">Games I&apos;m recently playing</h1>
         <p className="friend-page__subtitle">
           A quick look at the games I&apos;ve been spending time with lately.
         </p>
