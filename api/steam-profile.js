@@ -1,5 +1,4 @@
 const STEAM_API_BASE = 'https://api.steampowered.com';
-const MAX_FEATURED_GAMES = 5;
 
 function json(response, statusCode, body) {
   response.status(statusCode).setHeader('Content-Type', 'application/json');
@@ -12,12 +11,26 @@ function json(response, statusCode, body) {
 
 function readRequiredConfig() {
   const apiKey = process.env.STEAM_API_KEY?.trim();
+  const profileId = process.env.STEAM_PROFILE_ID?.trim();
+  const showcaseAppIds = (process.env.STEAM_SHOWCASE_APPIDS || '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter((value) => /^\d+$/.test(value))
+    .map((value) => Number(value));
 
   if (!apiKey) {
     throw new Error('missing-steam-api-key');
   }
 
-  return { apiKey };
+  if (!profileId) {
+    throw new Error('missing-steam-profile-id');
+  }
+
+  if (showcaseAppIds.length === 0) {
+    throw new Error('missing-showcase-appids');
+  }
+
+  return { apiKey, profileId, showcaseAppIds };
 }
 
 function formatSteamApiUrl(pathname, params) {
@@ -31,8 +44,7 @@ function formatSteamApiUrl(pathname, params) {
 }
 
 async function fetchSteam(pathname, params) {
-  const url = formatSteamApiUrl(pathname, params);
-  const response = await fetch(url);
+  const response = await fetch(formatSteamApiUrl(pathname, params));
 
   if (!response.ok) {
     throw new Error(`steam-request-failed:${response.status}`);
@@ -58,51 +70,25 @@ async function resolveSteamId(apiKey, profileId) {
   return data.response.steamid;
 }
 
-function pickFeaturedGames(ownedGames, recentGames) {
-  const recentIds = new Set(recentGames.map((game) => game.appid));
-  return ownedGames
-    .slice()
-    .sort((left, right) => {
-      const leftRecent = recentIds.has(left.appid);
-      const rightRecent = recentIds.has(right.appid);
+function buildShowcaseGames(showcaseAppIds, ownedGames, recentGames) {
+  const ownedLookup = new Map(ownedGames.map((game) => [Number(game.appid), game]));
+  const recentIds = new Set(recentGames.map((game) => Number(game.appid)));
 
-      if (leftRecent !== rightRecent) {
-        return leftRecent ? -1 : 1;
+  return showcaseAppIds
+    .map((appid) => {
+      const ownedGame = ownedLookup.get(Number(appid));
+
+      if (!ownedGame) {
+        return null;
       }
 
-      return (right.playtime_forever || 0) - (left.playtime_forever || 0);
+      return {
+        appid: Number(ownedGame.appid),
+        name: ownedGame.name,
+        recentlyPlayed: recentIds.has(Number(ownedGame.appid)),
+      };
     })
-    .slice(0, MAX_FEATURED_GAMES);
-}
-
-async function getAchievementSummary(apiKey, steamId, games) {
-  const summaries = await Promise.all(
-    games.map(async (game) => {
-      try {
-        const data = await fetchSteam('/ISteamUserStats/GetPlayerAchievements/v1/', {
-          key: apiKey,
-          steamid: steamId,
-          appid: game.appid,
-        });
-        const achievements = data?.playerstats?.achievements;
-
-        if (!Array.isArray(achievements) || achievements.length === 0) {
-          return [game.appid, null];
-        }
-
-        const unlocked = achievements.reduce(
-          (count, achievement) => count + (achievement?.achieved ? 1 : 0),
-          0
-        );
-
-        return [game.appid, { unlocked, total: achievements.length }];
-      } catch {
-        return [game.appid, null];
-      }
-    })
-  );
-
-  return Object.fromEntries(summaries.filter(([, summary]) => summary));
+    .filter(Boolean);
 }
 
 export default async function handler(request, response) {
@@ -115,20 +101,10 @@ export default async function handler(request, response) {
   }
 
   try {
-    const { apiKey } = readRequiredConfig();
-    const requestedProfile = String(request.query.profile || '').trim();
+    const { apiKey, profileId, showcaseAppIds } = readRequiredConfig();
+    const steamId = await resolveSteamId(apiKey, profileId);
 
-    if (!requestedProfile) {
-      return json(response, 400, { error: 'missing-profile' });
-    }
-
-    const steamId = await resolveSteamId(apiKey, requestedProfile);
-
-    const [playerSummaryData, ownedGamesData, recentGamesData] = await Promise.all([
-      fetchSteam('/ISteamUser/GetPlayerSummaries/v2/', {
-        key: apiKey,
-        steamids: steamId,
-      }),
+    const [ownedGamesData, recentGamesData] = await Promise.all([
       fetchSteam('/IPlayerService/GetOwnedGames/v1/', {
         key: apiKey,
         steamid: steamId,
@@ -138,34 +114,29 @@ export default async function handler(request, response) {
       fetchSteam('/IPlayerService/GetRecentlyPlayedGames/v1/', {
         key: apiKey,
         steamid: steamId,
-        count: MAX_FEATURED_GAMES,
+        count: 20,
       }),
     ]);
 
-    const profile = playerSummaryData?.response?.players?.[0] ?? null;
     const ownedGames = ownedGamesData?.response?.games ?? [];
     const recentlyPlayed = recentGamesData?.response?.games ?? [];
-    const featuredGames = pickFeaturedGames(ownedGames, recentlyPlayed);
-    const achievementsByApp = await getAchievementSummary(apiKey, steamId, featuredGames);
+    const showcaseGames = buildShowcaseGames(showcaseAppIds, ownedGames, recentlyPlayed);
 
     return json(response, 200, {
-      profile,
-      ownedGames,
-      recentlyPlayed,
-      achievementsByApp,
+      showcaseGames,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'unknown-error';
-    const statusCode = message === 'missing-steam-api-key'
-      ? 500
-      : message === 'steam-profile-not-found'
+    const statusCode = (
+      message === 'steam-profile-not-found'
         ? 404
-        : message.startsWith('steam-request-failed:')
-          ? 502
-          : 500;
+        : message.startsWith('missing-')
+          ? 500
+          : message.startsWith('steam-request-failed:')
+            ? 502
+            : 500
+    );
 
-    return json(response, statusCode, {
-      error: message,
-    });
+    return json(response, statusCode, { error: message });
   }
 }
