@@ -126,30 +126,6 @@ const getFeaturedGames = (ownedGames, recentlyPlayed, achievementsByApp) => {
   return merged.slice(0, 5);
 };
 
-const getActivityFeed = (profile, recentlyPlayed) => {
-  const activity = [];
-
-  if (profile?.gameextrainfo) {
-    activity.push({
-      id: `playing-${profile.gameid || profile.gameextrainfo}`,
-      icon: 'now',
-      text: `Playing ${profile.gameextrainfo} right now`,
-      time: 'live',
-    });
-  }
-
-  recentlyPlayed.slice(0, 4).forEach((game, index) => {
-    activity.push({
-      id: `${game.appid}-${index}`,
-      icon: index % 2 === 0 ? 'play' : 'time',
-      text: `Played ${game.name} for ${formatHours(game.playtime_2weeks)} in the last 2 weeks`,
-      time: 'recent',
-    });
-  });
-
-  return activity.slice(0, 4);
-};
-
 async function loadSteamProfile(signal) {
   if (!STEAM_PROFILE_ID) {
     throw new Error('missing-config');
@@ -204,10 +180,9 @@ export default function FriendPage() {
     () => getFeaturedGames(ownedGames, recentlyPlayed, achievementsByApp),
     [ownedGames, recentlyPlayed, achievementsByApp]
   );
-
-  const activityFeed = useMemo(
-    () => getActivityFeed(profile, recentlyPlayed),
-    [profile, recentlyPlayed]
+  const recentGames = useMemo(
+    () => recentlyPlayed.slice(0, 5),
+    [recentlyPlayed]
   );
 
   const stats = useMemo(() => {
@@ -234,7 +209,6 @@ export default function FriendPage() {
   return (
     <section className="friend-page">
       <div className="friend-page__intro">
-        <p className="friend-page__eyebrow">Friend route</p>
         <h1 className="friend-page__title">Steam side quest</h1>
         <p className="friend-page__subtitle">
           A live snapshot of what I&apos;m playing, what I keep coming back to, and whether Steam says I&apos;m
@@ -305,7 +279,7 @@ export default function FriendPage() {
             <div className="steam-card__stats" aria-label="Steam profile summary">
               <div className="steam-stat">
                 <span className="steam-stat__value">{stats.totalHours}</span>
-                <span className="steam-stat__label">hours played</span>
+                <span className="steam-stat__label">total hours</span>
               </div>
               <div className="steam-stat">
                 <span className="steam-stat__value">{stats.gamesOwned}</span>
@@ -380,18 +354,53 @@ export default function FriendPage() {
               </div>
             </div>
 
-            <div className="steam-section steam-section--activity">
-              <div className="steam-section__title">recent activity</div>
-              <div className="steam-activity">
-                {activityFeed.map((item) => (
-                  <div className="steam-activity__row" key={item.id}>
-                    <div className={`steam-activity__icon steam-activity__icon--${item.icon}`} aria-hidden="true">
-                      {item.icon === 'now' ? '●' : item.icon === 'time' ? '◔' : '▶'}
+            <div className="steam-section">
+              <div className="steam-section__title">recently played</div>
+              <div className="steam-games">
+                {recentGames.length > 0 ? recentGames.map((game) => {
+                  const isCurrentGame = currentGameId === Number(game.appid);
+
+                  return (
+                    <article className="steam-game" key={`recent-${game.appid}`}>
+                      {isCurrentGame && (
+                        <div className="steam-game__badge">
+                          <span className="steam-game__badge-dot" aria-hidden="true" />
+                          playing now
+                        </div>
+                      )}
+
+                      <img
+                        className="steam-game__art"
+                        src={buildGameHeaderImage(game.appid)}
+                        alt=""
+                        loading="lazy"
+                        onError={(event) => {
+                          event.currentTarget.style.visibility = 'hidden';
+                        }}
+                      />
+
+                      <div className="steam-game__info">
+                        <p className="steam-game__name">{game.name}</p>
+                        <p className="steam-game__meta">
+                          <span>last 2 weeks: {formatHours(game.playtime_2weeks)}</span>
+                          <span aria-hidden="true">·</span>
+                          <span>all time: {formatHours(game.playtime_forever)}</span>
+                        </p>
+                      </div>
+
+                      <div className="steam-game__hours">{formatHours(game.playtime_2weeks)}</div>
+                    </article>
+                  );
+                }) : (
+                  <article className="steam-game">
+                    <div className="steam-game__info">
+                      <p className="steam-game__name">No recent Steam sessions found</p>
+                      <p className="steam-game__meta">
+                        <span>Steam did not return any recently played games for this profile.</span>
+                      </p>
                     </div>
-                    <p className="steam-activity__text">{item.text}</p>
-                    <span className="steam-activity__time">{item.time}</span>
-                  </div>
-                ))}
+                  </article>
+                )}
               </div>
             </div>
 

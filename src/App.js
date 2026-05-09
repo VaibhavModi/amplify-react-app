@@ -208,7 +208,7 @@ function Footer() {
         </nav>
 
         <a className="footer-email-link" href="mailto:hi@vaibhavmodi.com">
-          Contact me at <span>hi@vaibhavmodi.com</span>
+          Reach out to me at <span>hi@vaibhavmodi.com</span>
         </a>
       </div>
     </footer>
