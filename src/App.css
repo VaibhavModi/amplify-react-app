@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=DM+Mono:wght@400;500&family=Newsreader:ital,wght@0,400;0,500;1,400&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
 :root {
   --bg-top: #0c0f15;
   --bg-bottom: #151922;
@@ -8,8 +10,6 @@
   --gold: #f4d04f;
   --shadow: 0 24px 60px rgba(0, 0, 0, 0.34);
 }
-
-@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=DM+Mono:wght@400;500&family=Newsreader:ital,wght@0,400;0,500;1,400&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 * {
   box-sizing: border-box;

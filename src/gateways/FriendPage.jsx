@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 const DEFAULT_STEAM_PROXY_PATH = '/api/steam-profile';
-const STEAM_PROXY_URL = process.env.REACT_APP_STEAM_PROXY_URL?.trim() || DEFAULT_STEAM_PROXY_PATH;
+const STEAM_PROXY_URL = import.meta.env.VITE_STEAM_PROXY_URL?.trim() || DEFAULT_STEAM_PROXY_PATH;
 
 const showcaseNotesByApp = {
   271590: {
@@ -123,7 +123,7 @@ export default function FriendPage() {
   return (
     <section className="friend-page">
       <div className="friend-page__intro">
-        <h1 className="friend-page__title">Games I&apos;m recently playing</h1>
+        <h1 className="friend-page__title">Games I&apos;m currently playing</h1>
         <p className="friend-page__subtitle">
           A quick look at the games I&apos;ve been spending time with lately.
         </p>

@@ -352,7 +352,7 @@ export default function RecruiterPage() {
                 <p className="story-hook-label">lines modernized</p>
               </article>
               <article className="story-hook-signal">
-                <p className="story-hook-value">hours -> minutes</p>
+                <p className="story-hook-value">hours {'->'} minutes</p>
                 <p className="story-hook-label">transformation time reduced</p>
               </article>
               <article className="story-hook-signal">

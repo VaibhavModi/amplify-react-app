@@ -1,10 +1,11 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import profilePortrait from './images/profile-portrait.png';
 import './App.css';
 
 
-const loadRecruiterPage = () => import('./gateways/RecruiterPage');
-const loadFriendPage = () => import('./gateways/FriendPage');
+const loadRecruiterPage = () => import('./gateways/RecruiterPage.jsx');
+const loadFriendPage = () => import('./gateways/FriendPage.jsx');
 
 const RecruiterPage = lazy(loadRecruiterPage);
 const FriendPage = lazy(loadFriendPage);
@@ -346,6 +347,7 @@ function App() {
 
         <Footer />
       </main>
+      <Analytics />
     </div>
   );
 }
